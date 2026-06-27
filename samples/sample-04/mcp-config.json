@@ -1,0 +1,139 @@
+{
+  "mcpServers": {
+    "support-ticket-mcp": {
+      "command": "node",
+      "args": ["/path/to/support-ticket-mcp/server.js"],
+      "env": {
+        "INTERCOM_TOKEN": "${INTERCOM_TOKEN}",
+        "ZENDESK_SUBDOMAIN": "${ZENDESK_SUBDOMAIN}",
+        "ZENDESK_EMAIL": "${ZENDESK_EMAIL}",
+        "ZENDESK_API_TOKEN": "${ZENDESK_API_TOKEN}",
+        "LINEAR_API_KEY": "${LINEAR_API_KEY}",
+        "DEFAULT_SOURCE": "linear",
+        "POLL_STATUS_FILTER": "open,new",
+        "CACHE_TTL_SECONDS": "60"
+      },
+      "description": "Fetches support tickets from Intercom, Zendesk, or Linear. Returns ticket content with customer metadata, attachment list, and previous ticket history for the same customer.",
+      "tools": [
+        {
+          "name": "get_ticket",
+          "description": "Fetch a specific support ticket by ID with full context including customer history",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "ticket_id": {
+                "type": "string",
+                "description": "The ticket identifier (e.g. 'TICKET-4829', 'INC-291', or Intercom conversation ID)"
+              },
+              "source": {
+                "type": "string",
+                "enum": ["linear", "jira", "intercom", "zendesk"],
+                "description": "Which platform to fetch from. Defaults to DEFAULT_SOURCE env var."
+              },
+              "include": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["customer_history", "attachments", "customer_plan", "thread_messages"]
+                },
+                "description": "Additional data to include with the ticket",
+                "default": ["customer_history", "customer_plan"]
+              }
+            },
+            "required": ["ticket_id"]
+          },
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "ticket": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "subject": { "type": "string" },
+                  "body": { "type": "string" },
+                  "customer": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string" },
+                      "email": { "type": "string" },
+                      "plan": { "type": "string" },
+                      "account_since": { "type": "string" },
+                      "ticket_history_count": { "type": "integer" }
+                    }
+                  },
+                  "created_at": { "type": "string", "format": "date-time" },
+                  "status": { "type": "string" },
+                  "attachments": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": { "type": "string" },
+                        "url": { "type": "string" },
+                        "type": { "type": "string" }
+                      }
+                    }
+                  },
+                  "previous_tickets": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "subject": { "type": "string" },
+                        "status": { "type": "string" },
+                        "days_ago": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              },
+              "fetched_at": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        {
+          "name": "get_new_tickets",
+          "description": "Fetch all new, unhandled tickets awaiting a first response. Used for polling mode.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string",
+                "enum": ["linear", "jira", "intercom", "zendesk"]
+              },
+              "max_results": {
+                "type": "integer",
+                "description": "Maximum tickets to return in one batch",
+                "default": 10
+              },
+              "older_than_minutes": {
+                "type": "integer",
+                "description": "Only return tickets older than N minutes (prevents processing tickets still being typed)",
+                "default": 2
+              }
+            }
+          }
+        },
+        {
+          "name": "search_knowledge_base",
+          "description": "Search your support knowledge base for articles relevant to a ticket subject or body",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string",
+                "description": "Search query derived from ticket subject and key terms"
+              },
+              "max_results": {
+                "type": "integer",
+                "default": 3
+              }
+            },
+            "required": ["query"]
+          }
+        }
+      ]
+    }
+  }
+}

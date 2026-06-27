@@ -1,0 +1,190 @@
+=======================================================================
+  SAMPLE RUN — Daily Ops Data Pipeline
+  Date: 2026-06-27 07:00:00 UTC (analysing: 2026-06-26)
+  Trigger: Cron (07:00 Mon–Fri)
+  Metrics: orders_count, revenue_total, support_tickets_opened, avg_response_time_minutes
+=======================================================================
+
+[07:00:00] INFO  Workflow started: ops-pipeline
+[07:00:00] INFO  Analysing date: 2026-06-26 (yesterday)
+[07:00:00] INFO  Step 1/3 — MCP: Pulling operational metrics
+[07:00:00] INFO  Calling data-pull-mcp → get_daily_metrics
+[07:00:00] INFO  Sources: postgres (orders), api (support metrics)
+[07:00:00] INFO  Baselines requested: 7d, 30d
+
+[07:00:01] INFO  Connecting to PostgreSQL...
+[07:00:01] INFO  PostgreSQL connected ✓
+[07:00:02] INFO  Query: orders + revenue for 2026-06-26
+[07:00:03] INFO  Result: orders=143, revenue=28450
+[07:00:03] INFO  Query: 7d baseline for orders (2026-06-19 to 2026-06-25)
+[07:00:03] INFO  Result: 7d avg orders=187, 7d avg revenue=37200
+[07:00:04] INFO  Query: 30d baseline...
+[07:00:04] INFO  Result: 30d avg orders=172, 30d avg revenue=34100
+[07:00:04] INFO  Calling support API: GET https://support-api.internal/metrics?date=2026-06-26
+[07:00:05] INFO  API response: 200 OK
+[07:00:05] INFO  Support metrics: tickets=47, avg_response_time=38 min
+[07:00:06] INFO  Support baselines: 7d tickets=28, 7d response=22 min
+[07:00:06] INFO  MCP response received ✓
+
+--- MCP OUTPUT ---
+{
+  "date": "2026-06-26",
+  "metrics": {
+    "orders_count": {
+      "value": 143,
+      "baseline_7d_avg": 187,
+      "baseline_30d_avg": 172
+    },
+    "revenue_total": {
+      "value": 28450,
+      "baseline_7d_avg": 37200,
+      "baseline_30d_avg": 34100
+    },
+    "support_tickets_opened": {
+      "value": 47,
+      "baseline_7d_avg": 28,
+      "baseline_30d_avg": 31
+    },
+    "avg_response_time_minutes": {
+      "value": 38,
+      "baseline_7d_avg": 22,
+      "baseline_30d_avg": 25
+    }
+  },
+  "fetched_at": "2026-06-27T07:00:06Z"
+}
+--- END MCP OUTPUT ---
+
+[07:00:06] INFO  Step 2/3 — Skill: Analysing metrics for anomalies
+[07:00:06] INFO  Sending to Claude ops-analyst skill
+[07:00:06] INFO  Thresholds: CRITICAL >20%, WARNING >10%
+
+[07:00:06] INFO  Pre-analysis: calculating deviations...
+[07:00:06] INFO  orders_count: -23.5% from 7d avg → CRITICAL
+[07:00:06] INFO  revenue_total: -23.5% from 7d avg → CRITICAL
+[07:00:06] INFO  support_tickets_opened: +67.9% from 7d avg → CRITICAL
+[07:00:06] INFO  avg_response_time_minutes: +72.7% from 7d avg → CRITICAL
+[07:00:06] INFO  Overall status: CRITICAL (4/4 metrics anomalous)
+
+[07:00:22] INFO  Skill response received ✓ (15.8s generation time)
+
+--- SKILL OUTPUT ---
+{
+  "date": "2026-06-26",
+  "overall_status": "CRITICAL",
+  "anomalies": [
+    {
+      "metric": "avg_response_time_minutes",
+      "value": 38,
+      "baseline_7d_avg": 22,
+      "deviation_pct": 72.7,
+      "severity": "CRITICAL",
+      "plain_english": "Support response time is 73% above normal — the team is taking 38 minutes on average versus the usual 22. With ticket volume also up 68%, the support queue is severely stressed.",
+      "suggested_action": "Check current queue depth and assign additional support capacity immediately. If a product bug is driving the spike, a status page update will reduce repeat contact volume."
+    },
+    {
+      "metric": "support_tickets_opened",
+      "value": 47,
+      "baseline_7d_avg": 28,
+      "deviation_pct": 67.9,
+      "severity": "CRITICAL",
+      "plain_english": "Support tickets are 68% above the 7-day average. The spike is almost certainly connected to the order volume drop — customers likely hit an error and reached out instead of retrying.",
+      "suggested_action": "Pull ticket categories from yesterday. If a single error type accounts for >30% of tickets, that confirms a checkout bug."
+    },
+    {
+      "metric": "orders_count",
+      "value": 143,
+      "baseline_7d_avg": 187,
+      "deviation_pct": -23.5,
+      "severity": "CRITICAL",
+      "plain_english": "Orders were 24% below the 7-day average and the lowest single-day count in 30 days. Average order value is normal ($199) — this is a conversion/volume problem, not a pricing problem.",
+      "suggested_action": "Check checkout error logs for the period 00:00–23:59 UTC Jun 26. Focus on payment gateway timeout errors and 4xx responses on /checkout/complete."
+    },
+    {
+      "metric": "revenue_total",
+      "value": 28450,
+      "baseline_7d_avg": 37200,
+      "deviation_pct": -23.5,
+      "severity": "CRITICAL",
+      "plain_english": "Revenue was $8,750 below the 7-day average. Since AOV ($199) is normal, this is entirely driven by the order count drop.",
+      "suggested_action": "Revenue will self-correct when the checkout issue is resolved. Focus on orders_count root cause."
+    }
+  ],
+  "normal_metrics": [],
+  "executive_summary": "Yesterday (Jun 26) showed critical degradation across all four tracked metrics. Orders and revenue both dropped ~24% while support tickets spiked 68% with response times 73% above normal. The pattern is consistent with a checkout or payment issue that blocked purchases and drove frustrated customers to support simultaneously. Priority: review checkout error logs — everything else cascades from that root cause.",
+  "recommended_priority": "Review checkout error logs (00:00–23:59 UTC Jun 26) for payment gateway timeouts and 4xx errors on /checkout/complete.",
+  "analysis_generated_at": "2026-06-27T07:00:22Z"
+}
+--- END SKILL OUTPUT ---
+
+[07:00:22] INFO  Step 3/3 — Connector: Posting to Slack
+[07:00:22] INFO  Formatting Block Kit message (overall_status: CRITICAL)
+[07:00:22] INFO  Blocks generated: 12 (header + summary + 4 anomaly sections + priority + footer)
+[07:00:22] INFO  Posting to channel: #ops-daily (C04MNPQR5TU)
+[07:00:23] INFO  POST https://slack.com/api/chat.postMessage
+[07:00:24] INFO  Slack response: ok=true, ts=1751001624.847291
+[07:00:24] INFO  CRITICAL alert: pinning message...
+[07:00:25] INFO  POST https://slack.com/api/pins.add
+[07:00:25] INFO  Message pinned ✓
+[07:00:25] INFO  @channel mention sent (CRITICAL threshold met)
+
+--- CONNECTOR OUTPUT ---
+{
+  "success": true,
+  "platform": "slack",
+  "channel_id": "C04MNPQR5TU",
+  "message_ts": "1751001624.847291",
+  "message_permalink": "https://forgemind.slack.com/archives/C04MNPQR5TU/p1751001624847291",
+  "pinned": true,
+  "posted_at": "2026-06-27T07:00:25Z"
+}
+--- END CONNECTOR OUTPUT ---
+
+[07:00:25] INFO  Run saved to database: run_id=ops_20260627_070000, status=complete
+[07:00:25] INFO  ─────────────────────────────────────────────────────
+[07:00:25] INFO  WORKFLOW COMPLETE ✓
+[07:00:25] INFO  ─────────────────────────────────────────────────────
+[07:00:25] INFO  Duration: 25 seconds
+[07:00:25] INFO  Date analysed: 2026-06-26
+[07:00:25] INFO  Overall status: CRITICAL
+[07:00:25] INFO  Anomalies found: 4 (4 CRITICAL, 0 WARNING)
+[07:00:25] INFO  Normal metrics: 0
+[07:00:25] INFO  Slack message: https://forgemind.slack.com/archives/C04MNPQR5TU/p17510...
+[07:00:25] INFO  Message pinned: YES (CRITICAL threshold met)
+[07:00:25] INFO  Next scheduled run: 2026-06-30 07:00:00 UTC (Monday)
+
+--- SLACK MESSAGE PREVIEW ---
+🔴 Daily Ops Briefing — Jun 26, 2026 | CRITICAL
+
+4 anomalies detected | All metrics tracked: 4
+
+Yesterday showed critical degradation across all tracked metrics. Orders and revenue
+both dropped ~24% while support tickets spiked 68% with response times 73% above
+normal. Pattern consistent with a checkout issue. Priority: review checkout error logs.
+
+────────────────────────────────────
+
+🔴 CRITICAL — avg_response_time_minutes
+38 min (↑73% vs 7d avg of 22 min)
+Support queue severely stressed: 73% slower responses with 68% more tickets.
+→ Assign additional support capacity immediately
+
+🔴 CRITICAL — support_tickets_opened
+47 tickets (↑68% vs 7d avg of 28)
+Spike almost certainly connected to order drop — customers hitting errors.
+→ Pull ticket categories: >30% single error type = checkout bug confirmed
+
+🔴 CRITICAL — orders_count
+143 orders (↓24% vs 7d avg of 187)
+Lowest single-day count in 30 days. AOV normal — conversion/volume problem.
+→ Check checkout error logs 00:00–23:59 UTC Jun 26
+
+🔴 CRITICAL — revenue_total
+$28,450 (↓24% vs 7d avg of $37,200)
+$8,750 below average. AOV normal — purely a volume issue.
+→ Will self-correct when checkout issue is resolved
+
+Priority: Review checkout error logs (00:00–23:59 UTC Jun 26) for payment gateway
+timeouts and 4xx errors on /checkout/complete.
+--- END SLACK PREVIEW ---
+=======================================================================

@@ -1,51 +1,50 @@
-# Sample 05 — Personal Morning Briefing Workflow
+# HO10 Sample 05 — Personal Morning Briefing Workflow
 
-**Problem:** Starting the day takes 20–30 minutes of checking email, scanning the calendar, skimming news, and mentally assembling a plan. By the time you've done all that, your focus is already scattered.
+## What you'll build
+A personal "chief of staff" that hands you a clear plan before your first coffee. One trigger **gathers** today's calendar, your important unread emails, and a couple of relevant headlines, **summarises** them into a single 200–300 word brief with a focus for the day, then **delivers** it to your inbox or as your first calendar event. You assemble it in Claude.ai with a Skill, a Connector, and an MCP.
 
-**This workflow solves it** by composing three pieces:
+## Use it with your Claude.ai subscription
+No API key needed. Just your normal Claude.ai login (Pro or Team).
+
+1. Open **Claude.ai** → **Skills** (`claude.ai/skills`). Click **New Skill**, name it `morning-brief`, and paste in the full text from **`skill.md`**. Save it. This teaches Claude how to write your brief.
+2. Go to **Settings → Connectors** (`claude.ai/settings/connectors`) and turn on **Gmail** and **Google Calendar** (or **Outlook**). Click **Connect** and sign in once. (Easy version of `connector.md`.)
+3. To gather everything in one shot you can add the inputs MCP: open **Claude Desktop** (`claude.ai/download`) and paste the entry from **`mcp-config.json`** into its config, then restart it. *(Optional — the Gmail and Calendar connectors above can supply the inputs on their own.)*
+4. Start a new chat and paste **the example prompt** below. Claude gathers, summarises, and delivers your brief.
+
+## The example prompt
+Copy this into a new Claude chat:
+
+```
+You are my morning chief of staff. Do all three steps and show me each result:
+
+1. GATHER: Pull today's inputs — my Google Calendar events for today, my 10 most important unread emails (skip newsletters and receipts), and 2 news headlines relevant to my work. Use the connectors/MCP available to you.
+2. SUMMARISE: Use my morning-brief skill to write one briefing under 300 words with these sections: Schedule (meetings in time order), Emails Needing Action (mark each 🔴 urgent / 🟡 today / 🟢 whenever), News (max 2 items), and Focus of the Day (one sentence). Calm, direct tone — no hype.
+3. DELIVER: Show me the brief. Once I say "send it", email it to me via my Gmail connector with the subject "Morning Brief — [today's date]".
+
+Wait for my approval before sending.
+```
+
+## The three pieces
 
 | Piece | Role | What it does |
 |-------|------|-------------|
-| MCP — Morning Inputs MCP | Data Gatherer | Pulls today's calendar events, unread emails, and relevant news headlines |
-| Skill — Morning Brief Summariser | Shaper | Synthesises everything into a single 5-minute read with priorities and a daily focus |
-| Connector — Email / Calendar Connector | Actor | Sends the briefing to your inbox or adds it as a first calendar event at 07:00 |
+| MCP — Morning Inputs | Data gatherer | Pulls calendar, emails, and news |
+| Skill — Morning Brief Summariser | Shaper | Writes a scannable 200–300 word brief (see `skill.md`) |
+| Connector — Gmail / Calendar | Actor | Emails the brief or files it as a calendar event |
 
-## The Three Pieces
+## Files in this sample
 
-### MCP: Morning Inputs MCP
-Connects to Gmail (or Outlook), Google Calendar, and an optional news feed. Returns today's meetings, the 10 most important unread emails, and 5 news items relevant to your work.
+- `skill.md` — the Morning Brief Summariser skill (paste into Claude → Skills)
+- `workflow.md` — the full flow with a diagram and step-by-step detail
+- `connector.md` — how the email/calendar connector works (advanced/manual setup)
+- `mcp-config.json` — the inputs MCP entry for Claude Desktop
+- `sample_run.txt` — a real end-to-end run you can read through
+- `index.html` — open in your browser for a clickable setup guide
 
-See `mcp-config.json` for the server config.
+## Make it your own
+- Tell the Skill what "important" means to you (specific senders, projects, or keywords).
+- Change delivery to a calendar event at 07:00 instead of an email.
+- Add a "tomorrow prep" line that flags anything you need to get ready tonight.
 
-### Skill: Morning Brief Summariser
-A Claude skill that reads all inputs and writes a structured morning brief: top priorities, today's schedule at a glance, emails that need action, and a single "focus of the day" — all in under 300 words.
-
-See `skill.md` for the full skill definition.
-
-### Connector: Email / Calendar Connector
-Delivers the brief via email (to yourself) using Gmail API, or creates a "Morning Brief" event as the first calendar event of the day with the brief in the description.
-
-See `connector.md` for setup instructions.
-
-## Files in this Sample
-
-```
-sample-05/
-├── README.md          ← this file
-├── workflow.md        ← full step-by-step flow with ASCII diagram
-├── skill.md           ← Claude skill definition for Morning Brief Summariser
-├── connector.md       ← email/calendar connector setup guide
-├── mcp-config.json    ← MCP server configuration snippet
-└── sample_run.txt     ← complete log of one successful run
-```
-
-## Quick Start
-
-1. Configure your morning inputs MCP using `mcp-config.json`
-2. Add the skill from `skill.md` to your Claude Code project
-3. Set up the delivery connector from `connector.md`
-4. Schedule the workflow to run at 06:45 daily (see `workflow.md`)
-
-## Expected Output
-
-A concise morning brief delivered to your inbox or calendar by 07:00 — with your schedule, priority emails, and a single focus for the day — ready to read over coffee.
+## Optional — automate it with the API (advanced)
+You do **not** need this for the course. `connector.md` and `mcp-config.json` show the fuller manual setup (Gmail/Calendar API keys, running the MCP server, a 06:45 schedule). Only worth it once you want the brief to arrive every morning with zero clicks.

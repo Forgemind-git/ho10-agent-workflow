@@ -2,33 +2,40 @@
 
 > Hands-on portfolio project · **Week 4** · **Peer-reviewed** · module M11. Part of the **ForgeMind AI — AI Productivity Essentials** course.
 
-## Goal
+You compose three Claude.ai building blocks into one workflow:
 
-**Done when:** Skill + Connector + MCP chained, running unattended
+- a **Skill** (Claude's instructions for the job),
+- a **Connector** (Claude takes an action in another app, e.g. Slack, Gmail, LinkedIn),
+- an **MCP** (Claude pulls in fresh data).
 
-## What to ship
+One trigger then runs **gather → shape → act** for you.
 
-The Skill + Connector + MCP config + a recording of the composed workflow running unattended.
+## Use it with your Claude.ai subscription
+**No API key needed.** Everything runs on your normal Claude.ai login (Pro or Team), plus the free Claude Desktop app if you want the MCP step.
 
-## Pick a problem statement
+1. Open a sample below and read its `README.md`.
+2. Follow its **"Use it with your Claude.ai subscription"** steps — paste the Skill into Claude → Skills, turn on the Connector in Settings → Connectors, and (optionally) add the MCP in Claude Desktop.
+3. Paste the sample's ready-made example prompt into a new Claude chat and watch it run.
 
-Choose **one** of these real use-cases — or bring your own (get it approved first):
+Each sample is **copy-and-use**: the Skill, the example prompt, and a real sample run are all filled in. Start from one, then tweak it for your own work.
 
-1. As a content marketer you juggle research, writing and publishing across three tools. Build a composed workflow where an MCP pulls trend research, a Skill drafts the post in your voice, and a Connector posts it, all chained to run unattended. Outcome: one trigger takes a topic through research, draft and publish with no manual handoff, captured on a recording.
+## The 5 samples
 
-2. Your reps waste time enriching leads, writing outreach and logging it all separately. Build a workflow where an MCP enriches the lead, a Skill drafts tailored outreach, and a Connector logs it to the CRM, chained together. Outcome: an unattended run that turns a raw lead into an enriched record with outreach drafted and logged, recorded end to end.
+| # | Sample | One trigger does… |
+|---|--------|-------------------|
+| 01 | [Content Creation Pipeline](samples/sample-01/) | research a trend → draft a post in your voice → publish it |
+| 02 | [Lead Enrichment & Outreach](samples/sample-02/) | enrich a lead → draft a personalised email → log it to your CRM |
+| 03 | [Daily Ops Data Pipeline](samples/sample-03/) | pull yesterday's metrics → flag anomalies → post to Slack |
+| 04 | [Support Ticket Workflow](samples/sample-04/) | fetch a ticket → draft a reply → update the tracker |
+| 05 | [Personal Morning Briefing](samples/sample-05/) | gather calendar + email + news → summarise → deliver your brief |
 
-3. Your ops routine means pulling data, analysing it and filing or notifying people by hand every day. Build a workflow where an MCP pulls the data, a Skill analyses it, and a Connector files the result or sends a notification, running unattended. Outcome: a recorded run that goes from data to a filed or notified result with no human steps.
+Open `index.html` in your browser for a clickable overview of all five.
 
-4. Support replies are slow because fetching the ticket, drafting and updating the tracker are three separate jobs. Build a workflow where an MCP fetches the ticket, a Skill drafts the reply, and a Connector updates the tracker, chained to run unattended. Outcome: a recorded run that takes a ticket and returns a drafted reply with the tracker updated.
+## What to ship (for the hands-on)
+Pick one sample (or bring your own use case), assemble the Skill + Connector + MCP in your Claude.ai subscription, run it end-to-end, and record the run.
 
-5. Your mornings start with the same scramble of inputs to sort before you can plan. Build a personal workflow where an MCP gathers the day's inputs, a Skill summarises them, and a Connector schedules or files the output, running unattended. Outcome: a recording of one trigger producing your morning summary and calendar entries with no manual work.
-
-## How to use this repo
-
-1. Click **Use this template** to create your own copy.
-2. Build your chosen project in your copy.
-3. Replace this section of the README with: what you built, the problem it solves, and how to run it.
+## Optional — automate it (advanced)
+Each sample's `connector.md` and `mcp-config.json` show the fuller manual setup for running unattended on a schedule. That path uses platform API keys and a terminal and is **not required** for the course.
 
 ---
 

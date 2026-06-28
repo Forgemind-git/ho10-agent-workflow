@@ -1,5 +1,9 @@
 # Connector: Slack Notification Connector
 
+> **Easiest path — use your Claude.ai subscription (no API key).** In Claude.ai, open **Settings → Connectors** and turn this integration on with one click — you sign in once and Claude can act on your behalf. For the course you do **not** need anything below.
+>
+> Everything that follows (OAuth apps, tokens, `.env` files, code) is the **optional, advanced** manual setup — only useful once you want the workflow to run unattended on a schedule.
+
 ## What This Connector Does
 
 Takes the Ops Analyst skill's analysis output and posts a formatted, colour-coded daily briefing to a Slack channel using Block Kit. Pins the message if any CRITICAL anomalies are present.

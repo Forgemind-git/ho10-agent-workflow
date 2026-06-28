@@ -1,0 +1,118 @@
+{
+  "mcpServers": {
+    "company-enrichment-mcp": {
+      "command": "node",
+      "args": ["/path/to/company-enrichment-mcp/server.js"],
+      "env": {
+        "APOLLO_API_KEY": "${APOLLO_API_KEY}",
+        "CLEARBIT_API_KEY": "${CLEARBIT_API_KEY}",
+        "BUILTWITH_API_KEY": "${BUILTWITH_API_KEY}",
+        "CACHE_TTL_SECONDS": "86400",
+        "RATE_LIMIT_PER_MINUTE": "60"
+      },
+      "description": "Enriches a company domain with firmographic data, tech stack, recent news, job postings, and hiring signals using Apollo.io, Clearbit, and BuiltWith.",
+      "tools": [
+        {
+          "name": "enrich_company",
+          "description": "Fetch enriched company data for a given domain including size, industry, tech stack, recent news, and job postings",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "domain": {
+                "type": "string",
+                "description": "Company domain to enrich (e.g. 'acme.com')"
+              },
+              "contact_name": {
+                "type": "string",
+                "description": "Name of the contact at this company (for personalisation context)"
+              },
+              "contact_email": {
+                "type": "string",
+                "description": "Email of the contact (used for person-level enrichment if available)"
+              },
+              "include": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["company_info", "tech_stack", "recent_news", "job_postings", "funding", "social_profiles"]
+                },
+                "description": "Which enrichment categories to fetch",
+                "default": ["company_info", "tech_stack", "recent_news", "job_postings"]
+              },
+              "job_postings_days_back": {
+                "type": "integer",
+                "description": "How many days back to look for job postings",
+                "default": 90
+              },
+              "news_days_back": {
+                "type": "integer",
+                "description": "How many days back to look for news",
+                "default": 60
+              }
+            },
+            "required": ["domain"]
+          },
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "company": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "domain": { "type": "string" },
+                  "industry": { "type": "string" },
+                  "size": { "type": "string" },
+                  "revenue_band": { "type": "string" },
+                  "location": { "type": "string" },
+                  "founded": { "type": "integer" },
+                  "description": { "type": "string" }
+                }
+              },
+              "tech_stack": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "recent_signals": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": { "type": "string", "enum": ["job_posting", "news", "hiring", "funding", "product_launch"] },
+                    "title": { "type": "string" },
+                    "days_ago": { "type": "integer" },
+                    "description": { "type": "string" },
+                    "signal_strength": { "type": "string", "enum": ["high", "medium", "low"] }
+                  }
+                }
+              },
+              "enriched_at": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        {
+          "name": "find_contacts",
+          "description": "Find decision-maker contacts at a company by title or department",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "domain": {
+                "type": "string",
+                "description": "Company domain to search"
+              },
+              "titles": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Job title keywords to filter by (e.g. ['Head of Ops', 'VP Operations', 'Director of RevOps'])"
+              },
+              "max_results": {
+                "type": "integer",
+                "default": 5
+              }
+            },
+            "required": ["domain"]
+          }
+        }
+      ]
+    }
+  }
+}

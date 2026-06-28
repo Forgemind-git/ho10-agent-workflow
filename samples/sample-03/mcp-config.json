@@ -1,0 +1,123 @@
+{
+  "mcpServers": {
+    "data-pull-mcp": {
+      "command": "node",
+      "args": ["/path/to/data-pull-mcp/server.js"],
+      "env": {
+        "DATABASE_URL": "${DATABASE_URL}",
+        "GOOGLE_SHEETS_CREDENTIALS": "${GOOGLE_SHEETS_CREDENTIALS_PATH}",
+        "API_TIMEOUT_MS": "10000",
+        "CACHE_TTL_SECONDS": "300"
+      },
+      "description": "Pulls operational metrics from configured data sources (PostgreSQL, REST APIs, Google Sheets) with historical baselines for anomaly detection.",
+      "tools": [
+        {
+          "name": "get_daily_metrics",
+          "description": "Fetch operational metrics for a given date from one or more data sources, including 7-day and 30-day baseline averages",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date",
+                "description": "The date to fetch metrics for (YYYY-MM-DD). Defaults to yesterday."
+              },
+              "sources": {
+                "type": "array",
+                "description": "List of data source configurations",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["postgres", "mysql", "api", "google_sheets", "csv"],
+                      "description": "Type of data source"
+                    },
+                    "query": {
+                      "type": "string",
+                      "description": "SQL query (for postgres/mysql sources). Use $1 as date parameter placeholder."
+                    },
+                    "url": {
+                      "type": "string",
+                      "description": "API endpoint URL (for api sources). Use {date} as date placeholder."
+                    },
+                    "sheet_id": {
+                      "type": "string",
+                      "description": "Google Sheet ID (for google_sheets sources)"
+                    },
+                    "sheet_range": {
+                      "type": "string",
+                      "description": "Sheet range notation e.g. 'Sheet1!A1:F100'"
+                    },
+                    "metric_names": {
+                      "type": "array",
+                      "items": { "type": "string" },
+                      "description": "Names to assign to the returned columns/fields"
+                    },
+                    "auth_header": {
+                      "type": "string",
+                      "description": "Authorization header value for API sources (supports ${ENV_VAR} substitution)"
+                    }
+                  },
+                  "required": ["type", "metric_names"]
+                }
+              },
+              "include_baselines": {
+                "type": "boolean",
+                "description": "Whether to include 7-day and 30-day baseline averages",
+                "default": true
+              },
+              "baseline_days": {
+                "type": "array",
+                "items": { "type": "integer" },
+                "description": "Which baseline periods to calculate (in days)",
+                "default": [7, 30]
+              }
+            },
+            "required": ["sources"]
+          },
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "date": { "type": "string" },
+              "metrics": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "value": { "type": "number" },
+                    "baseline_7d_avg": { "type": "number" },
+                    "baseline_30d_avg": { "type": "number" }
+                  }
+                }
+              },
+              "fetched_at": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        {
+          "name": "get_metric_history",
+          "description": "Fetch a single metric's values over a date range for trend analysis",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "metric_name": {
+                "type": "string",
+                "description": "Name of the metric to retrieve history for"
+              },
+              "start_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "end_date": {
+                "type": "string",
+                "format": "date"
+              }
+            },
+            "required": ["metric_name", "start_date", "end_date"]
+          }
+        }
+      ]
+    }
+  }
+}

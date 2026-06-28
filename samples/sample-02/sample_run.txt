@@ -1,0 +1,136 @@
+=======================================================================
+  SAMPLE RUN — Lead Enrichment & Outreach Workflow
+  Date: 2026-06-27 10:15:00 UTC
+  Trigger: Webhook (new contact added to HubSpot with status=new)
+  Lead: John Smith <john.smith@acme.com> @ Acme Corp
+=======================================================================
+
+[10:15:00] INFO  Workflow started: lead-workflow
+[10:15:00] INFO  Lead received: John Smith | john.smith@acme.com | acme.com
+[10:15:00] INFO  Step 1/3 — MCP: Enriching company data
+[10:15:00] INFO  Calling company-enrichment-mcp → enrich_company
+[10:15:00] INFO  Domain: acme.com
+[10:15:00] INFO  Include: company_info, tech_stack, recent_news, job_postings, funding
+
+[10:15:01] INFO  Apollo.io lookup: found company record
+[10:15:02] INFO  Clearbit enrichment: company + person data fetched
+[10:15:03] INFO  BuiltWith tech stack: 6 technologies identified
+[10:15:04] INFO  Job postings scraped: 3 active postings found
+[10:15:05] INFO  News search: 2 articles in last 60 days
+
+[10:15:05] INFO  MCP response received ✓
+[10:15:05] INFO  Signals identified: 3 (2 high, 1 medium)
+
+--- MCP OUTPUT ---
+{
+  "company": {
+    "name": "Acme Corp",
+    "domain": "acme.com",
+    "industry": "B2B SaaS",
+    "size": "51-200",
+    "revenue_band": "$10M-$50M ARR",
+    "location": "San Francisco, CA",
+    "founded": 2018,
+    "description": "Acme Corp builds workflow automation tools for mid-market operations teams."
+  },
+  "tech_stack": ["Salesforce", "HubSpot", "Zapier", "Slack", "Notion", "AWS"],
+  "recent_signals": [
+    {
+      "type": "job_posting",
+      "title": "Head of RevOps",
+      "posted_days_ago": 14,
+      "description": "Looking for someone to build out our revenue operations function from scratch. Must have experience with CRM data hygiene and sales process automation.",
+      "signal_strength": "high"
+    },
+    {
+      "type": "hiring",
+      "title": "VP of Sales hired",
+      "days_ago": 23,
+      "detail": "Alex Rivera joined as VP of Sales from Outreach.io",
+      "signal_strength": "high"
+    },
+    {
+      "type": "news",
+      "headline": "Acme Corp raises $12M Series A",
+      "days_ago": 45,
+      "url": "https://techcrunch.com/acme-series-a",
+      "signal_strength": "medium"
+    }
+  ],
+  "enriched_at": "2026-06-27T10:15:05Z"
+}
+--- END MCP OUTPUT ---
+
+[10:15:05] INFO  Best signal selected: "Head of RevOps" job posting (strength: high, days_ago: 14)
+[10:15:05] INFO  Step 2/3 — Skill: Drafting personalised outreach email
+[10:15:06] INFO  Sending to Claude personalised-outreach-drafter skill
+[10:15:06] INFO  Context: B2B SaaS company, 51-200 employees, hiring RevOps
+
+[10:15:14] INFO  Skill response received ✓ (8.2s generation time)
+[10:15:14] INFO  Personalisation score: 0.91 (threshold: 0.70 ✓)
+[10:15:14] INFO  Word count: 78 (target: <100 ✓)
+
+--- SKILL OUTPUT ---
+{
+  "subject_lines": [
+    "RevOps at Acme — one thing worth knowing",
+    "The Head of RevOps hire → what usually comes next",
+    "Quick thought on Acme's RevOps buildout"
+  ],
+  "email_body": "Hi John,\n\nSaw Acme is hiring a Head of RevOps — usually means CRM data hygiene and automation are about to become a priority.\n\nWe help ops teams at companies your size get their HubSpot data clean and their workflows running without manual work. Most see results in the first 2 weeks.\n\nWould it be worth a 15-minute call to see if it fits what you're building?\n\nBest,\n[Your name]",
+  "signal_used": {
+    "type": "job_posting",
+    "detail": "Head of RevOps posting (14 days ago), explicitly mentions CRM data hygiene and sales process automation as core requirements"
+  },
+  "pain_point_mapped": "CRM data hygiene and sales process automation — confirmed by job posting language",
+  "personalisation_score": 0.91,
+  "email_word_count": 78,
+  "follow_up_suggestion": "T+3 business days if no reply",
+  "notes": "Used the job posting's own language (CRM data hygiene, automation) as proof of the pain. Avoided referencing the VP hire to keep the signal focused — two signals in one email dilutes specificity."
+}
+--- END SKILL OUTPUT ---
+
+[10:15:14] INFO  Email draft validated: 78 words ✓, personalisation_score 0.91 ✓
+[10:15:14] INFO  Step 3/3 — Connector: Logging to HubSpot CRM
+[10:15:14] INFO  Searching HubSpot for contact: john.smith@acme.com
+
+[10:15:15] INFO  Contact found: John Smith (ID: 32847291)
+[10:15:15] INFO  Adding note with email draft...
+[10:15:16] INFO  Note created: ID 47829301
+[10:15:16] INFO  Applying tag: outreach-drafted...
+[10:15:17] INFO  Tag applied ✓
+[10:15:17] INFO  Creating follow-up task (due: 2026-07-01)...
+[10:15:18] INFO  Task created: ID 91827364
+[10:15:18] INFO  Setting deal stage: Prospecting...
+[10:15:19] INFO  Deal stage updated ✓
+
+--- CONNECTOR OUTPUT ---
+{
+  "success": true,
+  "crm": "hubspot",
+  "contact_id": "32847291",
+  "contact_url": "https://app.hubspot.com/contacts/8473621/contact/32847291",
+  "actions_taken": [
+    "Contact found: John Smith (existing)",
+    "Note added: outreach email draft (note_id: 47829301)",
+    "Tag applied: outreach-drafted",
+    "Task created: Follow up on 2026-07-01 (task_id: 91827364)",
+    "Deal stage set: Prospecting"
+  ],
+  "logged_at": "2026-06-27T10:15:19Z"
+}
+--- END CONNECTOR OUTPUT ---
+
+[10:15:19] INFO  Slack DM sent to assigned rep (@sarah_sales)
+[10:15:19] INFO  Message: "Outreach draft ready for John Smith (Acme Corp). Signal: Head of RevOps hiring. View in HubSpot: https://app.hubspot.com/contacts/..."
+[10:15:19] INFO  ─────────────────────────────────────────────────────
+[10:15:19] INFO  WORKFLOW COMPLETE ✓
+[10:15:19] INFO  ─────────────────────────────────────────────────────
+[10:15:19] INFO  Duration: 19 seconds
+[10:15:19] INFO  Lead: John Smith @ Acme Corp
+[10:15:19] INFO  Signal used: Head of RevOps job posting (14 days ago)
+[10:15:19] INFO  Personalisation score: 0.91
+[10:15:19] INFO  Email draft: 78 words, 3 subject line variants
+[10:15:19] INFO  CRM: https://app.hubspot.com/contacts/8473621/contact/32847291
+[10:15:19] INFO  Follow-up task: 2026-07-01 09:00 UTC
+=======================================================================

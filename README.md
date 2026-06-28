@@ -1,4 +1,6 @@
-# HO10 — Composed Agent Workflow
+# HO10 — Composed Agent Workflow (Starter Branch)
+
+> **This is the starter branch** — skeleton structure for students. The complete reference is on the `main` branch.
 
 > Hands-on portfolio project · **Week 4** · **Peer-reviewed** · module M11. Part of the **ForgeMind AI — AI Productivity Essentials** course.
 
